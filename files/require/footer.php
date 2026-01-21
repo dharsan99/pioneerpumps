@@ -231,7 +231,8 @@
 <script>
 grecaptcha.enterprise.ready(function() {
     grecaptcha.enterprise.execute('6LdU16wkAAAAAE5L12In5rQ3yHS-a8H-Nb2eXj83', {action: 'login'}).then(function(token) {
-       ...
+       // reCAPTCHA token available for form submission if needed
+       console.log('reCAPTCHA ready');
     });
 });
 </script>
