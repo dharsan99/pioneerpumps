@@ -227,15 +227,16 @@
 
     <!-- template scripts -->
     <script src="assets/js/theme.js"></script>
+    <!-- reCAPTCHA disabled - add pioneerpumps.onrender.com to allowed domains to re-enable
     <script src="https://www.google.com/recaptcha/enterprise.js?render=6LdU16wkAAAAAE5L12In5rQ3yHS-a8H-Nb2eXj83"></script>
-<script>
-grecaptcha.enterprise.ready(function() {
-    grecaptcha.enterprise.execute('6LdU16wkAAAAAE5L12In5rQ3yHS-a8H-Nb2eXj83', {action: 'login'}).then(function(token) {
-       // reCAPTCHA token available for form submission if needed
-       console.log('reCAPTCHA ready');
+    <script>
+    grecaptcha.enterprise.ready(function() {
+        grecaptcha.enterprise.execute('6LdU16wkAAAAAE5L12In5rQ3yHS-a8H-Nb2eXj83', {action: 'login'}).then(function(token) {
+           console.log('reCAPTCHA ready');
+        });
     });
-});
-</script>
+    </script>
+    -->
 
 
 </body>
