@@ -1,0 +1,21 @@
+Options +FollowSymlinks
+Options -Indexes
+DirectoryIndex login.php
+RewriteEngine on
+RewriteCond %{SERVER_PORT} 80 
+
+RewriteRule ^(.*)/(.*)/edit-(.*).htm pages/$1/add_$3.php?htid=$2&menu=$1&submenu=$3 [L,QSA]
+
+RewriteRule ^(.*)/(.*)/modify-(.*).htm pages/$1/modify_$3.php?htid=$2&menu=$1&submenu=$3 [L,QSA]
+
+RewriteRule ^(.*)/(.*)/view-(.*).htm pages/$1/view_$3.php?htid=$2&menu=$1&submenu=$3 [L,QSA]
+
+RewriteRule ^(.*)/(.*).htm pages/$1/$2.php?menu=$1&submenu=$2 [L,QSA]
+
+RewriteRule ^logout.htm logout.php [L,QSA]
+
+RewriteRule ^(.*)\.htm pages/$1.php [L,QSA]
+
+RewriteCond %{THE_REQUEST} !^POST
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d

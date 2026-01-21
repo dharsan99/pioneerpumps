@@ -1,0 +1,9 @@
+Options +FollowSymlinks
+Options -Indexes
+DirectoryIndex dashboard.php
+RewriteEngine on
+RewriteCond %{SERVER_PORT} 80 
+
+RewriteCond %{THE_REQUEST} !^POST
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d

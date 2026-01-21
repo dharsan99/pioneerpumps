@@ -1,0 +1,29 @@
+# Render.com Blueprint for Pioneer Pumps
+# https://render.com/docs/blueprint-spec
+
+services:
+  # PHP Web Service
+  - type: web
+    name: pioneer-pumps
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DB_HOST
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SITE_URL
+        sync: false
+    healthCheckPath: /
+    autoDeploy: true
+
+databases:
+  # MySQL Database (Render uses PostgreSQL, so you may need external MySQL)
+  # For MySQL, use an external service like PlanetScale, AWS RDS, or Railway
+  # - name: pioneer-pumps-db
+  #   databaseName: pioneer_pumps
+  #   user: pioneer_user

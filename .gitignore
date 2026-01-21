@@ -1,0 +1,54 @@
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment files (keep sample, ignore actual)
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+cache/
+
+# Uploaded files (keep structure, ignore content in production)
+# images/uploads/
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# PHP dependencies (if using composer)
+/vendor/
+
+# Node modules (if any)
+node_modules/
+
+# Local config overrides
+config/local.php
+
+# Debug files
+php84_compatibility_fixes.php
+check_all_php_syntax.php
+simple_syntax_check.php
+test_syntax.php
+update_object_checks.php
+fix_all_headers.php
+fix_fetch_errors.php

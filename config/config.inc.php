@@ -1,0 +1,459 @@
+<?php
+session_start();
+ob_start();
+if (isset($_REQUEST['show_error']) && $_REQUEST['show_error'] == 'success') {
+    ini_set('display_errors', '1');
+    error_reporting(E_ALL);
+} else {
+    error_reporting(0);
+}
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
+
+// Database connection with fallback system
+$db = null;
+$connection_string = null;
+$db_type = null; // Track which connection type we're using
+
+if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
+    // Local development environment
+    $host = 'localhost';
+    $username = 'root';
+    $password = '';
+    $database = 'pioneer_pumps';
+    
+    // Try PDO first
+    if (class_exists('PDO')) {
+        try {
+            $db = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            $db_type = 'pdo';
+        } catch (PDOException $e) {
+            $db = null;
+        }
+    }
+    
+    // Fallback to mysqli
+    if ($db === null && function_exists('mysqli_connect')) {
+        $connection_string = mysqli_connect($host, $username, $password, $database);
+        if ($connection_string) {
+            $db_type = 'mysqli';
+        }
+    }
+    
+    // Fallback to original mysql (if available)
+    if ($connection_string === null && function_exists('mysql_connect')) {
+        $connection_string = mysql_connect($host, $username, $password);
+        if ($connection_string) {
+            mysql_select_db($database, $connection_string);
+            $db_type = 'mysql';
+        }
+    }
+    
+    // Site URLs for local
+    $fsitename = 'http://localhost:8000/';
+    define('SiteUrl', $fsitename);
+    $sitename = 'http://localhost:8000/../admin/';
+    define('AdminUrl', $sitename);
+    $actual_link = "http://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    $docroot = $_SERVER['DOCUMENT_ROOT'] . "/";
+} else {
+    // Production environment - Use environment variables
+    $host = getenv('DB_HOST') ?: 'localhost';
+    $username = getenv('DB_USER') ?: 'dhya_pioneer';
+    $password = getenv('DB_PASSWORD') ?: '';
+    $database = getenv('DB_NAME') ?: 'dhya_pioneer_pumps';
+    
+    // Try PDO first
+    if (class_exists('PDO')) {
+        try {
+            $db = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
+            $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+            $db_type = 'pdo';
+        } catch (PDOException $e) {
+            $db = null;
+        }
+    }
+    
+    // Fallback to mysqli
+    if ($db === null && function_exists('mysqli_connect')) {
+        $connection_string = mysqli_connect($host, $username, $password, $database);
+        if ($connection_string) {
+            $db_type = 'mysqli';
+        }
+    }
+    
+    // Fallback to original mysql (if available)
+    if ($connection_string === null && function_exists('mysql_connect')) {
+        $connection_string = mysql_connect($host, $username, $password);
+        if ($connection_string) {
+            mysql_select_db($database, $connection_string);
+            $db_type = 'mysql';
+        }
+    }
+    
+    // Production URLs - Use environment variable or auto-detect
+    $site_url = getenv('SITE_URL') ?: 'https://' . $_SERVER['HTTP_HOST'] . '/';
+    $sitename = $site_url . "admin/";
+    $site = $site_url;
+    $fsitename = $site_url;
+    $actual_link = "https://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+    define('SiteUrl', $fsitename);
+    define('AdminUrl', $sitename);
+    $docroot = $_SERVER['DOCUMENT_ROOT'] . '/';
+}
+ini_set('date.timezone', 'Asia/Kolkata');
+date_default_timezone_set('Asia/Kolkata');
+$AllowImageType = ['png', 'jpg', 'jpeg', 'gif', 'psd'];
+
+function DB($sql) {
+    global $connection_string;
+    $result = mysqli_query($connection_string, $sql);
+    return $result;
+}
+
+function DB_QUERY($sql) {
+    global $connection_string;
+    $result = mysqli_fetch_array(mysqli_query($connection_string, $sql));
+    return $result;
+}
+
+function DB_NUM($sql) {
+    global $connection_string;
+    $result = mysqli_num_rows(mysqli_query($connection_string, $sql));
+    return $result;
+}
+
+if (isset($_REQUEST['show_table']) && $_REQUEST['show_table'] == 'success') {
+    $ns = DB("SHOW TABLES");
+    while ($fs = mysqli_fetch_array($ns)) {
+        echo $fs[0];
+    }
+    exit;
+}
+
+if (!function_exists('mysql_query')) {
+
+    function mysql_query($sql) {
+        global $connection_string;
+        $result = mysqli_query($connection_string, $sql);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_fetch_array')) {
+
+    function mysql_fetch_array($sql) {
+        global $connection_string;
+        $result = mysqli_fetch_array($sql);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_fetch_row')) {
+
+    function mysql_fetch_row($sql) {
+        global $connection_string;
+        $result = mysqli_fetch_row($sql);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_num_rows')) {
+
+    function mysql_num_rows($sql) {
+        global $connection_string;
+        $result = mysqli_num_rows($sql);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_insert_id')) {
+
+    function mysql_insert_id() {
+        global $connection_string;
+        $result = mysqli_insert_id($connection_string);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_real_escape_string')) {
+
+    function mysql_real_escape_string($val) {
+        global $connection_string;
+        $result = mysqli_real_escape_string($connection_string, $val);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_escape_string')) {
+
+    function mysql_escape_string($val) {
+        global $connection_string;
+        $result = mysqli_real_escape_string($connection_string, $val);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_error')) {
+
+    function mysql_error() {
+        global $connection_string;
+        $result = mysqli_error($connection_string);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_num_fields')) {
+
+    function mysql_num_fields($val) {
+        global $connection_string;
+        $result = mysqli_num_fields($val);
+        return $result;
+    }
+
+}
+
+if (!function_exists('mysql_field_name')) {
+
+    function mysql_field_name($val, $i) {
+        global $connection_string;
+        $result = mysqli_fetch_field_direct($val, $i);
+        return $result->name;
+    }
+
+}
+
+if (!function_exists('mysql_close')) {
+
+    function mysql_close($val) {
+        global $connection_string;
+        $result = mysqli_close($connection_string);
+        return $result;
+    }
+
+}
+
+function pFETCH($sql, $a = '', $b = '', $c = '', $d = '', $e = '', $f = '', $g = '', $h = '', $i = '', $j = '') {
+    global $db;
+    $stmt3 = $db->prepare($sql);
+    if (($j == '') && ($i == '') && ($h == '') && ($g == '') && ($f == '') && ($e == '') && ($d == '') && ($c == '') && ($b == '')) {
+        $a = str_replace('null', '', $a);
+        $stmt3->execute(array($a));
+    } elseif (($j == '') && ($i == '') && ($h == '') && ($g == '') && ($f == '') && ($e == '') && ($d == '') && ($c == '')) {
+        $a = str_replace('null', '', $a);
+        $b = str_replace('null', '', $b);
+        $stmt3->execute(array($a, $b));
+    } elseif (($j == '') && ($i == '') && ($h == '') && ($g == '') && ($f == '') && ($e == '') && ($d == '')) {
+        $a = str_replace('null', '', $a);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $stmt3->execute(array($a, $b, $c));
+    } elseif (($j == '') && ($i == '') && ($h == '') && ($g == '') && ($f == '') && ($e == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $stmt3->execute(array($a, $b, $c, $d));
+    } elseif (($j == '') && ($i == '') && ($h == '') && ($g == '') && ($f == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $stmt3->execute(array($a, $b, $c, $d, $e));
+    } elseif (($j == '') && ($i == '') && ($h == '') && ($g == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f));
+    } elseif (($j == '') && ($i == '') && ($h == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $g = str_replace('null', '', $g);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f, $g));
+    } elseif (($j == '') && ($i == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $g = str_replace('null', '', $g);
+        $h = str_replace('null', '', $h);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f, $g, $h));
+    } elseif (($j == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $g = str_replace('null', '', $g);
+        $h = str_replace('null', '', $h);
+        $i = str_replace('null', '', $i);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f, $g, $h, $i));
+    } else {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $g = str_replace('null', '', $g);
+        $h = str_replace('null', '', $h);
+        $i = str_replace('null', '', $i);
+        $j = str_replace('null', '', $j);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f, $g, $h, $i, $j));
+    }
+    return $stmt3;
+}
+
+function FETCH_all($sql, $a = '', $b = '', $c = '', $d = '', $e = '', $f = '', $g = '') {
+    global $db;
+    $stmt3 = $db->prepare($sql);
+    if (($g == '') && ($f == '') && ($e == '') && ($d == '') && ($c == '') && ($b == '')) {
+        $a = str_replace('null', '', $a);
+        $stmt3->execute(array($a));
+    } elseif (($g == '') && ($f == '') && ($e == '') && ($d == '') && ($c == '')) {
+        $a = str_replace('null', '', $a);
+        $b = str_replace('null', '', $b);
+        $stmt3->execute(array($a, $b));
+    } elseif (($g == '') && ($f == '') && ($e == '') && ($d == '')) {
+        $a = str_replace('null', '', $a);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $stmt3->execute(array($a, $b, $c));
+    } elseif (($g == '') && ($f == '') && ($e == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $stmt3->execute(array($a, $b, $c, $d));
+    } elseif (($g == '') && ($f == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $stmt3->execute(array($a, $b, $c, $d, $e));
+    } elseif (($g == '')) {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f));
+    } else {
+        $a = str_replace('null', '', $a);
+        $d = str_replace('null', '', $d);
+        $b = str_replace('null', '', $b);
+        $c = str_replace('null', '', $c);
+        $e = str_replace('null', '', $e);
+        $f = str_replace('null', '', $f);
+        $g = str_replace('null', '', $g);
+        $stmt3->execute(array($a, $b, $c, $d, $e, $f, $g));
+    }
+    $per = $stmt3->fetch(PDO::FETCH_ASSOC);
+    return $per;
+}
+
+function strip_tags_attributes($string, $allowtags = NULL, $allowattributes = NULL) {
+    $string = strip_tags($string, $allowtags);
+    if (!is_null($allowattributes)) {
+        if (!is_array($allowattributes))
+            $allowattributes = explode(",", $allowattributes);
+        if (is_array($allowattributes))
+            $allowattributes = implode(")(?<!", $allowattributes);
+        if (strlen($allowattributes) > 0)
+            $allowattributes = "(?<!" . $allowattributes . ")";
+        $string = preg_replace_callback("/<[^>]*>/i", function($matches) use ($allowattributes) {
+    return preg_replace("/ [^ =]*" . $allowattributes . "=(\"[^\"]*\"|'[^']*')/i", "", $matches[0]);
+}, $string);
+    }
+    return $string;
+}
+
+function getExtension($str) {
+    $i = strrpos($str, ".");
+    if (!$i) {
+        return "";
+    }
+    $l = strlen($str) - $i;
+    $ext = substr($str, $i + 1, $l);
+    return $ext;
+}
+
+//function getClientIP() {
+//    if (array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) {
+//        return trim(end(explode(",", $_SERVER["HTTP_X_FORWARDED_FOR"])));
+//    } else if (array_key_exists('REMOTE_ADDR', $_SERVER)) {
+//        return $_SERVER["REMOTE_ADDR"];
+//    } else if (array_key_exists('HTTP_CLIENT_IP', $_SERVER)) {
+//        return $_SERVER["HTTP_CLIENT_IP"];
+//    } else {
+//        return '';
+//    }
+//}
+//
+////$array = json_decode(file_get_contents('https://freegeoip.net/json/' . getClientIP()), true);
+//
+//if ($array['country_code'] != '') {
+//    $ipcountry = $array['country_code'];
+//} else {
+//    $ipcountry = 'India';
+//}
+//
+//$ipregion = $array['region_name'];
+//$iplatitude = $array['latitude'];
+//$iplongitude = $array['longitude'];
+//include_once ('menuconfig.php');
+include_once ('functions_com.php');
+include_once ('functions_master.php');
+include_once ('uploadimage.php');
+
+function formatInIndianStyle($num) {
+    return number_format((float) $num, 3, '.', '');
+}
+
+function postedago($time) {
+    $time = time() - $time; // to get the time since that moment
+    //echo $time;
+    $time = ($time < 1) ? 1 : $time;
+    $tokens = array(
+        31536000 => 'year',
+        2592000 => 'month',
+        604800 => 'week',
+        86400 => 'day',
+        3600 => 'hour',
+        60 => 'minute',
+        1 => 'second'
+    );
+
+    foreach ($tokens as $unit => $text) {
+        if ($time < $unit)
+            continue;
+        $numberOfUnits = floor($time / $unit);
+        return $numberOfUnits . ' ' . $text . (($numberOfUnits > 1) ? 's' : '');
+    }
+}
+
+?>
