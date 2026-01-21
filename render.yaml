@@ -8,22 +8,17 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     envVars:
-      - key: DB_HOST
-        sync: false
-      - key: DB_NAME
-        sync: false
-      - key: DB_USER
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pioneer-pumps-db
+          property: connectionString
       - key: SITE_URL
         sync: false
     healthCheckPath: /
     autoDeploy: true
 
 databases:
-  # MySQL Database (Render uses PostgreSQL, so you may need external MySQL)
-  # For MySQL, use an external service like PlanetScale, AWS RDS, or Railway
-  # - name: pioneer-pumps-db
-  #   databaseName: pioneer_pumps
-  #   user: pioneer_user
+  - name: pioneer-pumps-db
+    databaseName: pioneer_pumps
+    user: pioneer_user
+    plan: free

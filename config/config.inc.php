@@ -64,33 +64,45 @@ if (strpos($_SERVER['HTTP_HOST'], 'localhost') !== false) {
     $username = getenv('DB_USER') ?: 'dhya_pioneer';
     $password = getenv('DB_PASSWORD') ?: '';
     $database = getenv('DB_NAME') ?: 'dhya_pioneer_pumps';
-    
-    // Try PDO first
+    $db_driver = getenv('DB_DRIVER') ?: 'mysql'; // 'mysql' or 'pgsql'
+    $db_port = getenv('DB_PORT') ?: ($db_driver === 'pgsql' ? '5432' : '3306');
+
+    // Support for Render.com DATABASE_URL format
+    $database_url = getenv('DATABASE_URL');
+    if ($database_url) {
+        $db_parts = parse_url($database_url);
+        $host = $db_parts['host'] ?? $host;
+        $db_port = $db_parts['port'] ?? $db_port;
+        $username = $db_parts['user'] ?? $username;
+        $password = $db_parts['pass'] ?? $password;
+        $database = ltrim($db_parts['path'] ?? '', '/') ?: $database;
+        $db_driver = ($db_parts['scheme'] === 'postgres' || $db_parts['scheme'] === 'postgresql') ? 'pgsql' : 'mysql';
+    }
+
+    // Try PDO with appropriate driver
     if (class_exists('PDO')) {
         try {
-            $db = new PDO("mysql:host=$host;dbname=$database;charset=utf8mb4", $username, $password);
+            if ($db_driver === 'pgsql') {
+                $dsn = "pgsql:host=$host;port=$db_port;dbname=$database";
+                $db = new PDO($dsn, $username, $password);
+            } else {
+                $dsn = "mysql:host=$host;port=$db_port;dbname=$database;charset=utf8mb4";
+                $db = new PDO($dsn, $username, $password);
+            }
             $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
             $db_type = 'pdo';
         } catch (PDOException $e) {
             $db = null;
+            error_log("Database connection failed: " . $e->getMessage());
         }
     }
-    
-    // Fallback to mysqli
-    if ($db === null && function_exists('mysqli_connect')) {
-        $connection_string = mysqli_connect($host, $username, $password, $database);
+
+    // Fallback to mysqli (MySQL only)
+    if ($db === null && $db_driver === 'mysql' && function_exists('mysqli_connect')) {
+        $connection_string = mysqli_connect($host, $username, $password, $database, (int)$db_port);
         if ($connection_string) {
             $db_type = 'mysqli';
-        }
-    }
-    
-    // Fallback to original mysql (if available)
-    if ($connection_string === null && function_exists('mysql_connect')) {
-        $connection_string = mysql_connect($host, $username, $password);
-        if ($connection_string) {
-            mysql_select_db($database, $connection_string);
-            $db_type = 'mysql';
         }
     }
     

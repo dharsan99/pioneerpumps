@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# Install PostgreSQL dev libraries
+RUN apt-get update && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
+
 # Configure and install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
@@ -17,6 +20,8 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     mysqli \
     pdo \
     pdo_mysql \
+    pdo_pgsql \
+    pgsql \
     zip
 
 # Enable Apache mod_rewrite
